@@ -1,37 +1,44 @@
-# 🚀 Microsoft Infrastructure Automation (SRE Toolkit)
+# 🚀 Windows Server & Hyper-V Automation Suite (SRE focused)
 
-Este repositório reúne uma coleção de scripts **PowerShell** desenvolvidos para automatizar o provisionamento, a configuração e a gestão de ambientes críticos baseados em tecnologias Microsoft. O foco principal é aplicar princípios de **SRE (Site Reliability Engineering)** para garantir alta disponibilidade e padronização em larga escala.
+Este repositório contém um conjunto de ferramentas em **PowerShell** desenvolvidas para automatizar a infraestrutura de missão crítica. O objetivo é transformar tarefas complexas de gerenciamento de servidores em processos previsíveis, seguros e documentados, seguindo os princípios de **Site Reliability Engineering (SRE)**.
 
-## 📌 Contexto de Aplicação
-Estes scripts foram validados em ambientes de missão crítica com mais de **300 servidores**, onde a automação é essencial para reduzir o *toil* (trabalho manual repetitivo) e mitigar erros de configuração em Clusters de alta disponibilidade.
+## 📌 Contexto e Valor de Negócio
+Em um parque com mais de **300 servidores**, a configuração manual é o caminho mais curto para a indisponibilidade. Estes scripts foram projetados para garantir:
+* **Padronização:** Configurações idênticas em todos os nós do cluster.
+* **Previsibilidade:** Validações de DNS e rede antes de qualquer alteração estrutural.
+* **Resiliência:** Redução drástica de falhas humanas no provisionamento de Alta Disponibilidade (HA).
 
 ---
 
-## 🛠️ Scripts Principais
+## 🛠️ Ferramentas do Toolkit
 
 ### 1. [Enable-HyperVPlatform.ps1](./Enable-HyperVPlatform.ps1)
-Automatiza a preparação de hosts para virtualização.
-* **Funcionalidade:** Verifica, instala e habilita a Role do Hyper-V e todas as ferramentas de gerenciamento remoto (RSAT).
-* **Diferencial SRE:** O script é **idempotente**; ele valida o estado atual do sistema antes de aplicar mudanças, evitando reinicializações desnecessárias e garantindo que o servidor esteja em conformidade com o baseline.
+Prepara o sistema operacional para atuar como Hypervisor.
+* **Recursos:** Instalação da Role Hyper-V, ferramentas RSAT e módulos de PowerShell.
+* **Diferencial:** Possui lógica de verificação de estado (idempotência), evitando reinstalações ou reboots desnecessários.
 
 ### 2. [New-HyperVFailoverCluster.ps1](./New-HyperVFailoverCluster.ps1)
-Orquestração completa de Clusters de Failover para Hyper-V.
-* **Funcionalidade:** Instala a feature de Clustering em múltiplos nós simultaneamente, executa o `Test-Cluster` para validação de saúde e cria o cluster com IP estático.
-* **Diferencial SRE:** Implementa a fase de **Validação Crítica**. O script interrompe o provisionamento caso os testes de infraestrutura (Rede, Storage, OS) não passem, garantindo que apenas clusters saudáveis entrem em produção.
+Orquestrador para criação de clusters de failover com inteligência de pré-requisitos.
+* **Pre-flight Checks:** O script valida se o **nome do Cluster está disponível no DNS** e se os nós estão online antes de iniciar a instalação.
+* **Integração AD/DNS:** Gerencia a criação do Cluster Name Object (CNO) e assegura que os registros de rede sejam criados corretamente.
+* **Segurança:** Interrompe a execução caso a validação oficial da Microsoft (`Test-Cluster`) encontre inconsistências de hardware ou rede.
 
 ---
 
-## 🚀 Como Utilizar
+## 🚀 Como Executar
 
 ### Pré-requisitos
 * PowerShell 5.1 ou superior.
-* Privilégios de Administrador de Domínio (para criação de objetos de Cluster no AD).
-* WinRM habilitado nos servidores remotos.
+* Conectividade com Active Directory e DNS.
+* Permissões de Admin no domínio para registro de objetos de cluster.
 
 ### Exemplo de Uso
 ```powershell
-# 1. Habilitar Hyper-V em um novo servidor
+# 1. Configurar o Host
 .\Enable-HyperVPlatform.ps1
 
-# 2. Criar um Cluster de Alta Disponibilidade com dois nós
-.\New-HyperVFailoverCluster.ps1 -ClusterName "CLUSTER-PROD-01" -Nodes "SRV-HVP01","SRV-HVP02" -StaticIP "10.0.0.50"
+# 2. Deploy de Cluster com validação automática de DNS
+.\New-HyperVFailoverCluster.ps1 `
+    -ClusterName "CLSTR-PROD-01" `
+    -Nodes "SRV-HVP01", "SRV-HVP02" `
+    -StaticIP "192.168.10.50"
